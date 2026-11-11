@@ -40,7 +40,8 @@ portfolio/
     ├── css/
     │   └── app.css             Design tokens and all component styles
     ├── documents/
-    │   └── resume.pdf          (to be added — see "Before publishing")
+    │   ├── resume.pdf          ATS-friendly resume served by the download buttons
+    │   └── resume.html         Editable source of the resume (print to PDF to regenerate)
     └── js/
         ├── theme.js            Light/dark theme, loaded in <head> to avoid a flash
         ├── tailwind.config.js  Tailwind CDN configuration
@@ -101,7 +102,7 @@ If you add a backend, it should handle server-side validation, CSRF protection, 
 
 ## Before publishing
 
-- Add the resume at `assets/documents/resume.pdf`. The download buttons link to it and it does not exist yet.
+- Keep `assets/documents/resume.pdf` in step with the site content. To update it, edit `assets/documents/resume.html`, open it in Chrome or Edge, and print to PDF (A4, no headers and footers).
 - Add the credential link for the certification (`certifications[].url` in `assets/js/data/site.js`).
 - Fill in `techStack` for each project and, where they can be shown, add screenshots in `assets/js/data/projects.js`.
 - Check that the "Years Development Experience" figure in `stats` matches the experience timeline.
