@@ -1,146 +1,95 @@
 /**
- * modal.js — Project detail modal handling
+ * modal.js — Accessible project detail dialog: focus trap, Escape and
+ * backdrop to close, background scroll lock, focus restored on close.
  */
-(function ($) {
+window.Portfolio = window.Portfolio || {};
+
+(function (P, $) {
   'use strict';
 
-  var $modal = null;
-  var $overlay = null;
-  var lastFocusedElement = null;
+  const FOCUSABLE = 'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
-  function openModal(projectId) {
-    var projects = window.portfolioProjects || [];
-    var escapeHTML = window.portfolioEscapeHTML || function (s) { return s; };
+  let $modal, $footer;
+  let lastFocused = null;
 
-    var project = null;
-    for (var i = 0; i < projects.length; i++) {
-      if (projects[i].id === projectId) {
-        project = projects[i];
-        break;
-      }
-    }
+  function isOpen() {
+    return !$modal.prop('hidden');
+  }
+
+  /** Show a link button only when the project has a real URL for it. */
+  function setLink($link, url) {
+    const available = P.utils.isRealUrl(url);
+    $link.prop('hidden', !available).attr('href', available ? url : '#');
+    return available;
+  }
+
+  function open(projectId) {
+    const project = P.projects.findById(projectId);
     if (!project) return;
 
-    lastFocusedElement = document.activeElement;
+    const category = P.projects.primaryCategory(project);
+    lastFocused = document.activeElement;
 
-    // Populate modal fields
-    $('#modalCategory').text(project.categoryLabel);
+    $('#modalCategory').text(category.label).attr('class', 'badge badge--tint tint-' + category.tint);
     $('#modalTitle').text(project.title);
-    $('#modalOverview').text(project.overview);
-    $('#modalProblem').text(project.problem);
-    $('#modalSolution').text(project.solution);
-    $('#modalChallenges').text(project.challenges);
+    $('#modalBody').html(P.templates.projectDetail(project)).scrollTop(0);
 
-    // Features list
-    var featuresHTML = (project.features || []).map(function (f) {
-      return '<li class="flex items-start gap-2 text-slate-600 dark:text-slate-400 text-sm">' +
-             '<i class="fa-solid fa-check text-primary-500 mt-0.5 text-xs flex-shrink-0"></i>' +
-             '<span>' + escapeHTML(f) + '</span>' +
-             '</li>';
-    }).join('');
-    $('#modalFeatures').html(featuresHTML);
+    const hasGithub = setLink($('#modalGithubLink'), project.githubUrl);
+    const hasDemo = setLink($('#modalDemoLink'), project.demoUrl);
+    $footer.prop('hidden', !hasGithub && !hasDemo);
 
-    // Tech stack badges
-    var techHTML = (project.techStack || []).map(function (t) {
-      return '<span class="tech-tag">' + escapeHTML(t) + '</span>';
-    }).join('');
-    $('#modalTechStack').html(techHTML);
-
-    // Links
-    var $githubLink = $('#modalGithubLink');
-    var $demoLink = $('#modalDemoLink');
-
-    if (project.githubUrl && project.githubUrl !== '#') {
-      $githubLink.attr('href', project.githubUrl).show();
-    } else {
-      $githubLink.hide();
-    }
-
-    if (project.demoUrl && project.demoUrl !== '#') {
-      $demoLink.attr('href', project.demoUrl).show();
-    } else {
-      $demoLink.hide();
-    }
-
-    // Show modal
-    $modal.removeClass('hidden');
-    $('body').css('overflow', 'hidden');
-
-    // Focus management
-    setTimeout(function () {
-      $('#closeModalBtn').focus();
-    }, 100);
-
-    // Trap focus inside modal
-    trapFocus($modal[0]);
+    $modal.prop('hidden', false);
+    $('body').addClass('is-locked');
+    $('#closeModalBtn').trigger('focus');
   }
 
-  function closeModal() {
-    $modal.addClass('hidden');
-    $('body').css('overflow', '');
+  function close() {
+    if (!isOpen()) return;
+    $modal.prop('hidden', true);
+    $('body').removeClass('is-locked');
 
-    // Restore focus
-    if (lastFocusedElement) {
-      lastFocusedElement.focus();
-      lastFocusedElement = null;
+    if (lastFocused && document.contains(lastFocused)) lastFocused.focus();
+    lastFocused = null;
+  }
+
+  /** Keep Tab / Shift+Tab cycling inside the dialog. */
+  function trapFocus(event) {
+    const focusable = $modal.find(FOCUSABLE).filter(':visible');
+    if (!focusable.length) return;
+
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
     }
   }
 
-  // ---- Focus trap ----
-  function trapFocus(modalEl) {
-    var focusable = modalEl.querySelectorAll(
-      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-    );
-    var firstEl = focusable[0];
-    var lastEl = focusable[focusable.length - 1];
+  function init() {
+    $modal = $('#projectModal');
+    $footer = $('#modalFooter');
 
-    modalEl.addEventListener('keydown', function handleKey(e) {
-      if (e.key === 'Tab') {
-        if (e.shiftKey) {
-          if (document.activeElement === firstEl) {
-            e.preventDefault();
-            lastEl.focus();
-          }
-        } else {
-          if (document.activeElement === lastEl) {
-            e.preventDefault();
-            firstEl.focus();
-          }
-        }
-      }
-      if (e.key === 'Escape') {
-        closeModal();
-        modalEl.removeEventListener('keydown', handleKey);
-      }
+    $('#closeModalBtn').on('click', close);
+
+    // Clicking the dimmed backdrop (not the dialog itself) closes the modal.
+    $modal.on('click', function (event) {
+      if (event.target === $modal[0]) close();
+    });
+
+    // Project cards are rendered dynamically, so the trigger is delegated.
+    $(document).on('click', '[data-project]', function () {
+      open(this.dataset.project);
+    });
+
+    $(document).on('keydown', function (event) {
+      if (!isOpen()) return;
+      if (event.key === 'Escape') close();
+      if (event.key === 'Tab') trapFocus(event);
     });
   }
 
-  // ---- Init ----
-  $(document).ready(function () {
-    $modal   = $('#projectModal');
-    $overlay = $modal;
-
-    // Close button
-    $('#closeModalBtn').on('click', closeModal);
-
-    // Backdrop click
-    $modal.on('click', function (e) {
-      if ($(e.target).is($modal)) {
-        closeModal();
-      }
-    });
-
-    // View Details buttons (delegated — cards are rendered dynamically)
-    $(document).on('click', '.view-details-btn', function () {
-      var projectId = $(this).data('id');
-      openModal(projectId);
-    });
-
-    // Escape key (global)
-    $(document).on('keydown', function (e) {
-      if (e.key === 'Escape' && !$modal.hasClass('hidden')) {
-        closeModal();
-      }
-    });
-  });
-})(jQuery);
+  P.modal = { init: init };
+})(window.Portfolio, jQuery);

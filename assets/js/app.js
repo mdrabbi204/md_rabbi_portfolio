@@ -1,22 +1,13 @@
 /**
- * app.js — Main application initializer
+ * app.js — Application entry point. Starts each module in dependency order:
+ * content is rendered first so the behaviour modules can find it in the DOM.
  */
-(function ($) {
+(function (P, $) {
   'use strict';
 
-  $(document).ready(function () {
-    // All modules initialize themselves via their own DOMContentLoaded / ready handlers.
-    // This file serves as the global coordinator for any cross-module concerns.
+  const MODULES = ['render', 'projects', 'animations', 'navigation', 'modal', 'contact'];
 
-    // ---- Prevent navbar flash on load ----
-    $('#navbar').addClass('scrolled');
-    setTimeout(function () {
-      if ($(window).scrollTop() < 60) {
-        $('#navbar').removeClass('scrolled');
-      }
-    }, 50);
-
-    // ---- Log ready state (development only) ----
-    // console.info('[Portfolio] Application initialized.');
+  $(function () {
+    MODULES.forEach(function (name) { P[name].init(); });
   });
-})(jQuery);
+})(window.Portfolio, jQuery);

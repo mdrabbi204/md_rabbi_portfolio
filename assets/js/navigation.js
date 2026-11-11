@@ -1,137 +1,101 @@
 /**
- * navigation.js — Sticky navbar, mobile menu, active section, back-to-top
+ * navigation.js — Sticky navbar state, mobile menu, active section highlight
+ * and the back-to-top button. Smooth scrolling itself is native CSS
+ * (scroll-behavior on <html>), so anchor links keep working without JS.
  */
-(function ($) {
+window.Portfolio = window.Portfolio || {};
+
+(function (P, $) {
   'use strict';
 
-  // ---- Navbar scroll behavior ----
-  function handleNavbarScroll() {
-    const $navbar = $('#navbar');
-    if ($(window).scrollTop() > 60) {
-      $navbar.addClass('scrolled');
-    } else {
-      $navbar.removeClass('scrolled');
-    }
-  }
+  const SCROLLED_AFTER = 24;      // px scrolled before the navbar gets its background
+  const BACK_TO_TOP_AFTER = 500;  // px scrolled before the back-to-top button appears
+  const ACTIVE_OFFSET = 120;      // px below the top edge where a section counts as current
 
-  // ---- Active section highlight ----
-  const sections = ['home', 'about', 'skills', 'experience', 'projects', 'services', 'architecture', 'contact'];
+  let $navbar, $nav, $menuBtn, $menuIcon, $links, $backToTop;
+  let sections = [];
 
-  function updateActiveNav() {
-    const scrollY = $(window).scrollTop() + 120;
-    let current = '';
+  /* ---- Mobile menu ---- */
 
-    sections.forEach(function (id) {
-      const section = document.getElementById(id);
-      if (section && section.offsetTop <= scrollY) {
-        current = id;
-      }
-    });
-
-    $('.nav-link').each(function () {
-      const href = $(this).attr('href');
-      if (href === '#' + current) {
-        $(this).addClass('active');
-      } else {
-        $(this).removeClass('active');
-      }
+  function setMenuOpen(open) {
+    $nav.toggleClass('is-open', open);
+    $navbar.toggleClass('is-open', open);
+    $menuIcon.toggleClass('fa-bars', !open).toggleClass('fa-xmark', open);
+    $menuBtn.attr({
+      'aria-expanded': String(open),
+      'aria-label': open ? 'Close navigation menu' : 'Open navigation menu',
     });
   }
 
-  // ---- Mobile menu ----
+  function isMenuOpen() {
+    return $nav.hasClass('is-open');
+  }
+
   function initMobileMenu() {
-    const $btn = $('#mobileMenuBtn');
-    const $menu = $('#mobileMenu');
-    const $icon = $('#menuIcon');
+    $menuBtn.on('click', function () { setMenuOpen(!isMenuOpen()); });
 
-    $btn.on('click', function () {
-      const isOpen = !$menu.hasClass('hidden');
-      if (isOpen) {
-        $menu.addClass('hidden');
-        $icon.removeClass('fa-xmark').addClass('fa-bars');
-        $btn.attr('aria-expanded', 'false');
-      } else {
-        $menu.removeClass('hidden');
-        $icon.removeClass('fa-bars').addClass('fa-xmark');
-        $btn.attr('aria-expanded', 'true');
+    $nav.on('click', 'a', function () { setMenuOpen(false); });
+
+    $(document).on('click', function (event) {
+      if (isMenuOpen() && !$(event.target).closest('#navbar').length) setMenuOpen(false);
+    });
+
+    $(document).on('keydown', function (event) {
+      if (event.key === 'Escape' && isMenuOpen()) {
+        setMenuOpen(false);
+        $menuBtn.trigger('focus');
       }
     });
 
-    // Close on link click
-    $menu.find('a').on('click', function () {
-      $menu.addClass('hidden');
-      $icon.removeClass('fa-xmark').addClass('fa-bars');
-      $btn.attr('aria-expanded', 'false');
-    });
-
-    // Close on outside click
-    $(document).on('click', function (e) {
-      if (!$(e.target).closest('#navbar').length) {
-        $menu.addClass('hidden');
-        $icon.removeClass('fa-xmark').addClass('fa-bars');
-        $btn.attr('aria-expanded', 'false');
-      }
+    // The desktop layout shows the links inline, so drop the open state there.
+    window.matchMedia('(min-width: 75rem)').addEventListener('change', function (event) {
+      if (event.matches) setMenuOpen(false);
     });
   }
 
-  // ---- Smooth scrolling ----
-  function initSmoothScroll() {
-    $(document).on('click', 'a[href^="#"]', function (e) {
-      const target = $(this).attr('href');
-      if (target === '#') return;
-      const $target = $(target);
-      if ($target.length) {
-        e.preventDefault();
-        const offset = $target.offset().top - 72;
-        $('html, body').animate({ scrollTop: offset }, 500, 'swing');
-      }
+  /* ---- Scroll-driven state ---- */
+
+  function currentSectionId(scrollY) {
+    const atBottom = window.innerHeight + scrollY >= document.documentElement.scrollHeight - 4;
+    if (atBottom) return sections[sections.length - 1].id;
+
+    let current = sections[0].id;
+    sections.forEach(function (section) {
+      if (section.getBoundingClientRect().top <= ACTIVE_OFFSET) current = section.id;
+    });
+    return current;
+  }
+
+  function updateOnScroll(scrollY) {
+    $navbar.toggleClass('is-scrolled', scrollY > SCROLLED_AFTER);
+    $backToTop.toggleClass('is-visible', scrollY > BACK_TO_TOP_AFTER);
+
+    if (!sections.length) return;
+    const activeHref = '#' + currentSectionId(scrollY);
+    $links.each(function () {
+      const active = this.getAttribute('href') === activeHref;
+      this.classList.toggle('is-active', active);
+      if (active) this.setAttribute('aria-current', 'location');
+      else this.removeAttribute('aria-current');
     });
   }
 
-  // ---- Back to Top ----
-  function initBackToTop() {
-    const $btn = $('#backToTopBtn');
+  function init() {
+    $navbar = $('#navbar');
+    $nav = $('#primaryNav');
+    $menuBtn = $('#mobileMenuBtn');
+    $menuIcon = $('#menuIcon');
+    $links = $nav.find('.nav__link');
+    $backToTop = $('#backToTopBtn');
 
-    $(window).on('scroll', function () {
-      if ($(window).scrollTop() > 400) {
-        $btn.addClass('visible');
-      } else {
-        $btn.removeClass('visible');
-      }
-    });
+    sections = $links.map(function () {
+      return document.querySelector(this.getAttribute('href'));
+    }).get();
 
-    $btn.on('click', function () {
-      $('html, body').animate({ scrollTop: 0 }, 400);
-    });
-  }
-
-  // ---- Dark Mode Toggle ----
-  function initThemeToggle() {
-    $('#themeToggle').on('click', function () {
-      const $html = $('html');
-      if ($html.hasClass('dark')) {
-        $html.removeClass('dark');
-        localStorage.setItem('theme', 'light');
-      } else {
-        $html.addClass('dark');
-        localStorage.setItem('theme', 'dark');
-      }
-    });
-  }
-
-  // ---- Init ----
-  $(document).ready(function () {
     initMobileMenu();
-    initSmoothScroll();
-    initBackToTop();
-    initThemeToggle();
+    $backToTop.on('click', function () { window.scrollTo({ top: 0 }); });
+    P.utils.onScroll(updateOnScroll);
+  }
 
-    handleNavbarScroll();
-    updateActiveNav();
-
-    $(window).on('scroll', function () {
-      handleNavbarScroll();
-      updateActiveNav();
-    });
-  });
-})(jQuery);
+  P.navigation = { init: init };
+})(window.Portfolio, jQuery);

@@ -1,123 +1,135 @@
 /**
- * contact.js — Contact form client-side validation and submission handling
+ * contact.js — Contact form validation and delivery.
+ *
+ * Delivery: if data.contact.endpoint is set, the form is POSTed there via
+ * AJAX. Otherwise it opens the visitor's email app with the message
+ * pre-filled, so the form works without a backend.
  */
-(function ($) {
+window.Portfolio = window.Portfolio || {};
+
+(function (P, $) {
   'use strict';
 
-  // ---- Show toast notification ----
+  const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const TOAST_DURATION = 4500;
+
+  // One entry per field: where it is, when it is valid, what to say if not.
+  const FIELDS = [
+    { input: '#contactName',    error: '#nameError',    isValid: function (v) { return v.length >= 2; },         message: 'Please enter your full name (at least 2 characters).' },
+    { input: '#contactEmail',   error: '#emailError',   isValid: function (v) { return EMAIL_PATTERN.test(v); }, message: 'Please enter a valid email address.' },
+    { input: '#contactSubject', error: '#subjectError', isValid: function (v) { return v.length >= 3; },         message: 'Please enter a subject (at least 3 characters).' },
+    { input: '#contactMessage', error: '#messageError', isValid: function (v) { return v.length >= 10; },        message: 'Please enter a message (at least 10 characters).' },
+  ];
+
+  let toastTimer = null;
+
   function showToast(message, type) {
-    var $toast = $('#toast');
-    var $icon  = $('#toastIcon');
-    var $msg   = $('#toastMsg');
+    const isError = type === 'error';
+    $('#toastIcon')
+      .toggleClass('fa-circle-check', !isError)
+      .toggleClass('fa-circle-exclamation', isError);
+    $('#toastMsg').text(message);
+    $('#toast').toggleClass('toast--error', isError).addClass('is-visible');
 
-    $icon.attr('class', 'fa-solid flex-shrink-0 ' +
-      (type === 'error' ? 'fa-circle-exclamation text-red-400' : 'fa-circle-check text-emerald-400')
-    );
-    $msg.text(message);
-    $toast.addClass('show');
-
-    setTimeout(function () {
-      $toast.removeClass('show');
-    }, 4000);
+    window.clearTimeout(toastTimer);
+    toastTimer = window.setTimeout(function () { $('#toast').removeClass('is-visible'); }, TOAST_DURATION);
   }
 
-  // ---- Validate field ----
-  function validateField(input, errorId, condition, message) {
-    var $input = $(input);
-    var $error = $('#' + errorId);
-
-    if (condition) {
-      $input.addClass('error').removeClass('valid');
-      $error.text(message).removeClass('hidden');
-      return false;
-    } else {
-      $input.removeClass('error').addClass('valid');
-      $error.addClass('hidden');
-      return true;
-    }
+  function showStatus(message, type) {
+    $('#formStatus')
+      .text(message)
+      .toggleClass('form-status--error', type === 'error')
+      .prop('hidden', false);
   }
 
-  // ---- Validate email format ----
-  function isValidEmail(email) {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+  function valueOf(field) {
+    return $(field.input).val().trim();
   }
 
-  // ---- Validate all fields ----
+  function validateField(field) {
+    const valid = field.isValid(valueOf(field));
+    $(field.input).attr('aria-invalid', String(!valid));
+    $(field.error).text(valid ? '' : field.message).prop('hidden', valid);
+    return valid;
+  }
+
   function validateForm() {
-    var name    = $('#contactName').val().trim();
-    var email   = $('#contactEmail').val().trim();
-    var subject = $('#contactSubject').val().trim();
-    var message = $('#contactMessage').val().trim();
-
-    var v1 = validateField('#contactName',    'nameError',    name.length < 2,      'Please enter your full name (at least 2 characters).');
-    var v2 = validateField('#contactEmail',   'emailError',   !isValidEmail(email), 'Please enter a valid email address.');
-    var v3 = validateField('#contactSubject', 'subjectError', subject.length < 3,   'Please enter a subject (at least 3 characters).');
-    var v4 = validateField('#contactMessage', 'messageError', message.length < 10,  'Please enter a message (at least 10 characters).');
-
-    return v1 && v2 && v3 && v4;
+    // Validate every field (no short-circuit) so all errors show at once.
+    return FIELDS.map(validateField).every(Boolean);
   }
 
-  // ---- Real-time validation on blur ----
-  function initRealtimeValidation() {
-    $('#contactName').on('blur', function () {
-      validateField(this, 'nameError', $(this).val().trim().length < 2, 'Please enter your full name.');
-    });
-    $('#contactEmail').on('blur', function () {
-      validateField(this, 'emailError', !isValidEmail($(this).val().trim()), 'Please enter a valid email address.');
-    });
-    $('#contactSubject').on('blur', function () {
-      validateField(this, 'subjectError', $(this).val().trim().length < 3, 'Please enter a subject.');
-    });
-    $('#contactMessage').on('blur', function () {
-      validateField(this, 'messageError', $(this).val().trim().length < 10, 'Please enter your message.');
+  function formValues() {
+    return {
+      name: valueOf(FIELDS[0]),
+      email: valueOf(FIELDS[1]),
+      subject: valueOf(FIELDS[2]),
+      message: valueOf(FIELDS[3]),
+    };
+  }
+
+  function resetForm() {
+    $('#contactForm')[0].reset();
+    FIELDS.forEach(function (field) {
+      $(field.input).removeAttr('aria-invalid');
+      $(field.error).prop('hidden', true);
     });
   }
 
-  // ---- Handle form submission ----
-  function handleSubmit(e) {
-    e.preventDefault();
+  function setSending(sending) {
+    const $button = $('#submitContactBtn');
+    $button.prop('disabled', sending);
+    $button.find('i').attr('class', sending ? 'fa-solid fa-spinner fa-spin' : 'fa-solid fa-paper-plane');
+    $button.find('span').text(sending ? 'Sending...' : 'Send Message');
+  }
+
+  function sendToEndpoint(values) {
+    setSending(true);
+    $.ajax({ url: P.data.contact.endpoint, method: 'POST', data: values })
+      .done(function () {
+        resetForm();
+        showStatus('Thank you! Your message has been received. I\'ll be in touch shortly.');
+        showToast('Message sent! I\'ll be in touch soon.');
+      })
+      .fail(function () {
+        showStatus('Your message could not be sent. Please email me directly at ' + P.data.contact.email + '.', 'error');
+        showToast('Message could not be sent.', 'error');
+      })
+      .always(function () { setSending(false); });
+  }
+
+  function sendViaEmailApp(values) {
+    const body = 'Name: ' + values.name + '\nEmail: ' + values.email + '\n\n' + values.message;
+    window.location.href = 'mailto:' + P.data.contact.email +
+      '?subject=' + encodeURIComponent(values.subject) +
+      '&body=' + encodeURIComponent(body);
+
+    showStatus('Your email app should now open with the message ready to send. If it doesn\'t, email me directly at ' + P.data.contact.email + '.');
+    showToast('Opening your email app...');
+  }
+
+  function handleSubmit(event) {
+    event.preventDefault();
 
     if (!validateForm()) {
-      // Focus first error field
-      var $firstError = $('#contactForm .error').first();
-      if ($firstError.length) $firstError.focus();
+      $('#contactForm [aria-invalid="true"]').first().trigger('focus');
       return;
     }
 
-    var $btn = $('#submitContactBtn');
-    $btn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin mr-2"></i>Sending...');
-
-    // Simulate AJAX send (replace with real endpoint when backend is ready)
-    // $.ajax({
-    //   url: '/contact/send',
-    //   method: 'POST',
-    //   data: {
-    //     name:    $('#contactName').val().trim(),
-    //     email:   $('#contactEmail').val().trim(),
-    //     subject: $('#contactSubject').val().trim(),
-    //     message: $('#contactMessage').val().trim(),
-    //   },
-    //   success: function (response) { ... },
-    //   error:   function () { ... }
-    // });
-
-    setTimeout(function () {
-      $btn.prop('disabled', false).html('<i class="fa-solid fa-paper-plane mr-2"></i>Send Message');
-      $('#contactForm')[0].reset();
-      $('#contactForm .form-input').removeClass('error valid');
-
-      $('#formSuccessMsg').removeClass('hidden');
-      showToast('Message sent! I\'ll be in touch soon.', 'success');
-
-      setTimeout(function () {
-        $('#formSuccessMsg').addClass('hidden');
-      }, 6000);
-    }, 1200);
+    if (P.data.contact.endpoint) sendToEndpoint(formValues());
+    else sendViaEmailApp(formValues());
   }
 
-  // ---- Init ----
-  $(document).ready(function () {
-    initRealtimeValidation();
+  function init() {
+    FIELDS.forEach(function (field) {
+      // Validate when leaving a field; re-check while typing once it is flagged.
+      $(field.input)
+        .on('blur', function () { validateField(field); })
+        .on('input', function () {
+          if (this.getAttribute('aria-invalid') === 'true') validateField(field);
+        });
+    });
     $('#contactForm').on('submit', handleSubmit);
-  });
-})(jQuery);
+  }
+
+  P.contact = { init: init };
+})(window.Portfolio, jQuery);
