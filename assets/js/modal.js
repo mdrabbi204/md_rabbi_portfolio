@@ -19,7 +19,7 @@ window.Portfolio = window.Portfolio || {};
   /** Show a link button only when the project has a real URL for it. */
   function setLink($link, url) {
     const available = P.utils.isRealUrl(url);
-    $link.prop('hidden', !available).attr('href', available ? url : '#');
+    $link.prop('hidden', !available).attr('href', available ? url : 'javascript:void(0)');
     return available;
   }
 

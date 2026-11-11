@@ -1,7 +1,11 @@
 /**
  * navigation.js — Sticky navbar state, mobile menu, active section highlight
- * and the back-to-top button. Smooth scrolling itself is native CSS
- * (scroll-behavior on <html>), so anchor links keep working without JS.
+ * and the back-to-top button.
+ *
+ * In-page links do not use "#section" hrefs. Each one carries
+ * data-scroll-to="<section id>" and is scrolled to here, so the address bar
+ * never gains a hash. The scroll animation and navbar offset still come from
+ * CSS (scroll-behavior and scroll-padding-top on <html>).
  */
 window.Portfolio = window.Portfolio || {};
 
@@ -71,12 +75,27 @@ window.Portfolio = window.Portfolio || {};
     $backToTop.toggleClass('is-visible', scrollY > BACK_TO_TOP_AFTER);
 
     if (!sections.length) return;
-    const activeHref = '#' + currentSectionId(scrollY);
+    const activeId = currentSectionId(scrollY);
     $links.each(function () {
-      const active = this.getAttribute('href') === activeHref;
+      const active = this.getAttribute('data-scroll-to') === activeId;
       this.classList.toggle('is-active', active);
       if (active) this.setAttribute('aria-current', 'location');
       else this.removeAttribute('aria-current');
+    });
+  }
+
+  /* ---- In-page links ---- */
+
+  function initScrollLinks() {
+    $(document).on('click', '[data-scroll-to]', function (event) {
+      const target = document.getElementById(this.getAttribute('data-scroll-to'));
+      if (!target) return;
+      event.preventDefault();
+      target.scrollIntoView();
+
+      // Move keyboard focus with the view, as a "#id" link would.
+      if (!target.hasAttribute('tabindex')) target.setAttribute('tabindex', '-1');
+      target.focus({ preventScroll: true });
     });
   }
 
@@ -89,10 +108,11 @@ window.Portfolio = window.Portfolio || {};
     $backToTop = $('#backToTopBtn');
 
     sections = $links.map(function () {
-      return document.querySelector(this.getAttribute('href'));
+      return document.getElementById(this.getAttribute('data-scroll-to'));
     }).get();
 
     initMobileMenu();
+    initScrollLinks();
     $backToTop.on('click', function () { window.scrollTo({ top: 0 }); });
     P.utils.onScroll(updateOnScroll);
   }
