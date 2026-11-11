@@ -31,7 +31,7 @@ Object.assign(window.Portfolio.data, {
 
   socials: [
     { id: 'email',    label: 'Email',    icon: 'fa-solid fa-envelope',  url: 'mailto:md.rabbi.web@gmail.com',        handle: 'md.rabbi.web@gmail.com',      ariaLabel: 'Send an email' },
-    { id: 'github',   label: 'GitHub',   icon: 'fa-brands fa-github',   url: 'https://github.com/rabbi204',          handle: 'rabbi204',                    ariaLabel: 'GitHub profile' },
+    { id: 'github',   label: 'GitHub',   icon: 'fa-brands fa-github',   url: 'https://github.com/mdrabbi204',        handle: 'mdrabbi204',                  ariaLabel: 'GitHub profile' },
     { id: 'linkedin', label: 'LinkedIn', icon: 'fa-brands fa-linkedin', url: 'https://bd.linkedin.com/in/rabbi204',  handle: 'bd.linkedin.com/in/rabbi204', ariaLabel: 'LinkedIn profile' },
     { id: 'whatsapp', label: 'WhatsApp', icon: 'fa-brands fa-whatsapp', url: 'https://wa.me/8801910597276',          handle: '+8801910597276',              ariaLabel: 'WhatsApp contact' },
   ],
