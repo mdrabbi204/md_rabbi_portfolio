@@ -4,6 +4,13 @@ Personal portfolio of Md. Rabbi, Full-Stack PHP Developer (Laravel, CodeIgniter,
 
 It is a static, single-page site: no build step and no backend.
 
+## What the site shows
+
+- **Experience:** Associate Programmer (Jan 2026 – Present) and Assistant Programmer (Jun 2023 – Dec 2025) at MicroMac Techno Valley Ltd.
+- **Education:** BSc in Computer Engineering, Bangladesh University of Business & Technology (BUBT).
+- **Certifications and publications:** one certification and one IEEE publication, shown as cards under Education.
+- **Projects:** nine products and modules worked on — FX Return, Credit Return, CSMS, goAML Middleware, A1Queue, Write-off Management Tool, PSED, FDI and Akhter's MRCPCH — filterable by Banking, Enterprise, Dashboard, Reporting, Automation and E-Learning.
+
 ## Tech stack
 
 - HTML5
@@ -69,7 +76,9 @@ Notes:
 
 - **Core skills:** in each `skills` group, names listed in `core` are highlighted as the core stack.
 - **Project filters:** a project appears under every entry in its `categories` array; the first entry is its primary category.
-- **Project buttons:** GitHub and Live Demo buttons only appear when `githubUrl` / `demoUrl` are real URLs (not `#`).
+- **Project buttons:** GitHub and Live Demo buttons only appear when `githubUrl` / `demoUrl` are real URLs (not `#`). All current projects leave both as `#`, so no buttons show.
+- **Project detail sections:** a section is skipped when its field is empty. `techStack` and `challenges` are currently empty for every project, so those sections do not appear.
+- **Certification and publication cards:** both use the same card. The link only appears when `url` is a real URL; `linkLabel` sets its text (default "View credential"), and `icon` / `tint` override the default award icon.
 - **Project screenshots:** set `image` to a file path to replace the generated cover.
 - **Profile photo:** set `profile.avatar` to an image path to replace the initials.
 - **Icons:** `icon` values are Font Awesome class names, e.g. `fa-solid fa-database`.
@@ -93,8 +102,9 @@ If you add a backend, it should handle server-side validation, CSRF protection, 
 ## Before publishing
 
 - Add the resume at `assets/documents/resume.pdf`. The download buttons link to it and it does not exist yet.
-- Replace the bracketed placeholders (`[COMPANY NAME]`, `[DATE]`, `[DEGREE / PROGRAM]`, ...) in `assets/js/data/site.js`.
-- Add real project links and, where they can be shown, screenshots in `assets/js/data/projects.js`.
+- Add the credential link for the certification (`certifications[].url` in `assets/js/data/site.js`).
+- Fill in `techStack` for each project and, where they can be shown, add screenshots in `assets/js/data/projects.js`.
+- Check that the "Years Development Experience" figure in `stats` matches the experience timeline.
 - Replace the placeholder domain `https://yourportfolio.dev/` in the canonical and Open Graph tags in `index.html`.
 - Tailwind is loaded from its CDN, which is intended for development. For production, compile Tailwind to a static stylesheet.
 
@@ -106,4 +116,4 @@ If you add a backend, it should handle server-side validation, CSRF protection, 
 
 ## Confidentiality
 
-Project and experience descriptions are anonymised summaries. Do not add customer data, account numbers, internal URLs, credentials, proprietary source code or confidential screenshots.
+Project descriptions are based on publicly available product information and do not name clients. Do not add customer data, account numbers, internal URLs, credentials, proprietary source code or confidential screenshots.
