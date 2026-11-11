@@ -126,11 +126,12 @@ window.Portfolio = window.Portfolio || {};
       checkList(item.points) + tagList(item.tags) + `</article></li>`;
   }
 
+  /** Credential card — shared by certifications and publications. */
   function certCard(cert) {
     const link = isRealUrl(cert.url)
-      ? `<a class="cert-card__link" ${linkAttrs(cert.url)}>View credential ${icon('fa-solid fa-arrow-up-right-from-square')}</a>`
+      ? `<a class="cert-card__link" ${linkAttrs(cert.url)}>${esc(cert.linkLabel || 'View credential')} ${icon('fa-solid fa-arrow-up-right-from-square')}</a>`
       : '';
-    return `<li class="card card--hover card--row cert-card reveal">${iconChip({ icon: 'fa-solid fa-award', tint: 'amber' })}` +
+    return `<li class="card card--hover card--row cert-card reveal">${iconChip({ icon: cert.icon || 'fa-solid fa-award', tint: cert.tint || 'amber' })}` +
       `<div><h3 class="card__title">${esc(cert.title)}</h3><p class="card__text">${esc(cert.issuer)}</p>` +
       `<p class="card__text">${esc(cert.date)}</p>${link}</div></li>`;
   }

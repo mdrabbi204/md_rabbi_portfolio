@@ -135,20 +135,29 @@ Object.assign(window.Portfolio.data, {
     },
   ],
 
-  // Placeholders — replace with real qualifications (add or remove entries freely).
   education: [
     {
-      title: '[DEGREE / PROGRAM]',
-      org: '[INSTITUTION NAME]',
-      meta: '[FIELD OF STUDY]',
-      period: '[DATE] – [DATE]',
+      title: 'BSc in Computer Engineering',
+      org: 'Bangladesh University of Business & Technology (BUBT)',
+      meta: 'Grade: 3.60',
+      period: 'Oct 2017 – Dec 2021',
       points: [],
       tags: [],
     },
   ],
 
+  // Set `url` to the credential link to show a "View credential" link on the card.
   certifications: [
-    { title: '[CERTIFICATION NAME]', issuer: '[ISSUING ORGANIZATION]', date: '[DATE]', url: '' },
+    { title: 'Communication Masterclass by Tahsan Khan', issuer: '10 Minute School', date: 'Issued Jan 2023 · Credential ID 63c9596786c7c', url: '' },
+  ],
+
+  // Set `url` to the paper's link to show a "View publication" link on the card.
+  publications: [
+    {
+      title: 'BLS: Bank Loan Sanction Using Blockchain Authenticity, Transparency and Reliability',
+      issuer: 'IEEE', date: 'Sep 14, 2021', url: 'https://ieeexplore.ieee.org/document/9641104',
+      icon: 'fa-solid fa-book-open', tint: 'blue', linkLabel: 'View publication',
+    },
   ],
 
   expertise: [

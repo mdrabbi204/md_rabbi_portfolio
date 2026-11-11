@@ -30,6 +30,7 @@ window.Portfolio = window.Portfolio || {};
     experience:     function (d) { return each(d.experience, T.timelineItem); },
     education:      function (d) { return each(d.education, T.timelineItem); },
     certifications: function (d) { return each(d.certifications, T.certCard); },
+    publications:   function (d) { return each(d.publications, T.certCard); },
     expertise:      function (d) { return each(d.expertise, cards()); },
     archLayers:     function (d) { return each(d.architecture.layers, T.archLayer); },
     archPrinciples: function (d) { return each(d.architecture.principles, cards({ compact: true, row: true })); },

@@ -59,7 +59,7 @@ Almost all content is data. You should rarely need to touch the HTML.
 | --- | --- |
 | Name, role, avatar, social links, contact email | `assets/js/data/site.js` → `profile`, `contact`, `socials` |
 | Statistics, strengths, skills | `assets/js/data/site.js` → `stats`, `strengths`, `skills` |
-| Work experience, education, certifications | `assets/js/data/site.js` → `experience`, `education`, `certifications` |
+| Work experience, education, certifications, publications | `assets/js/data/site.js` → `experience`, `education`, `certifications`, `publications` |
 | Banking expertise, problems, services, process | `assets/js/data/site.js` → `expertise`, `problems`, `services`, `process` |
 | Architecture diagram and principles | `assets/js/data/site.js` → `architecture` |
 | Projects and filter categories | `assets/js/data/projects.js` |
